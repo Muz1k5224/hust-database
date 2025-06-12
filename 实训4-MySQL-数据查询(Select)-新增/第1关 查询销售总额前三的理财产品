@@ -1,0 +1,23 @@
+ -- 1) 查询销售总额前三的理财产品
+--   请用一条SQL语句实现该查询：
+
+select pyear,rank()over (partition by pyear order by sumamount desc) as rk,p_id,sumamount
+from(
+    (select '2010' as pyear,p_id,sum(p_amount*pro_quantity) as sumamount
+    from finances_product 
+    join property on pro_pif_id = p_id 
+    where pro_type=1 and year(pro_purchase_time)=2010
+    group by p_id
+    order by sumamount desc
+    limit 3)
+    union all
+    (select '2011' as pyear,p_id,sum(p_amount*pro_quantity) as sumamount
+    from finances_product 
+    join property on pro_pif_id = p_id 
+    where pro_type=1 and year(pro_purchase_time)=2011
+    group by p_id
+    order by sumamount desc 
+    limit 3)
+)as temp
+order by pyear asc,rk asc, p_id asc
+
