@@ -1,0 +1,46 @@
+SELECT 
+    c.c_id, 
+    c.c_name,
+    COALESCE(b.total_balance, 0) +
+    COALESCE(p.total_investment, 0) +
+    COALESCE(p.total_income, 0) AS total_property
+FROM 
+    client c
+LEFT JOIN (
+    SELECT 
+        b_c_id, 
+        SUM(
+            CASE 
+                WHEN b_type = '储蓄卡' THEN b_balance
+                WHEN b_type = '信用卡' THEN -b_balance
+                ELSE 0
+            END
+        ) AS total_balance
+    FROM 
+        bank_card
+    GROUP BY 
+        b_c_id
+) b ON b.b_c_id = c.c_id
+LEFT JOIN (
+    SELECT 
+        pro_c_id, 
+        SUM(
+            CASE 
+                WHEN pro_type = 1 THEN pro_quantity * p_amount
+                WHEN pro_type = 2 THEN pro_quantity * i_amount
+                WHEN pro_type = 3 THEN pro_quantity * f_amount
+                ELSE 0
+            END
+        ) AS total_investment,
+        SUM(pro_income) AS total_income
+    FROM 
+        property p
+    LEFT JOIN 
+        finances_product fp ON p.pro_pif_id = fp.p_id AND p.pro_type = 1
+    LEFT JOIN 
+        insurance i ON p.pro_pif_id = i.i_id AND p.pro_type = 2
+    LEFT JOIN 
+        fund f ON p.pro_pif_id = f.f_id AND p.pro_type = 3
+    GROUP BY 
+        pro_c_id
+) p ON p.pro_c_id = c.c_id;
